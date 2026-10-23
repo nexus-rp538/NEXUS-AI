@@ -41,7 +41,7 @@ if(process.env.GOOGLE_CLIENT_ID&&process.env.GOOGLE_CLIENT_SECRET){passport.use(
 app.get('/auth/google',(req,res,next)=>{if(!process.env.GOOGLE_CLIENT_ID||!process.env.GOOGLE_CLIENT_SECRET)return res.redirect('/login?error=google_config');passport.authenticate('google',{scope:['profile','email'],prompt:'select_account',session:true})(req,res,next);});
 app.get('/auth/google/callback',(req,res,next)=>{passport.authenticate('google',(err,user,info)=>{if(err||!user){console.error('GOOGLE_CALLBACK_ERROR',{message:err?.message,code:err?.code,info,callback:googleCallback});return res.redirect('/login?error=google_callback');}req.logIn(user,(loginErr)=>{if(loginErr)return res.redirect('/login?error=google_session');req.session.save((saveErr)=>saveErr?res.redirect('/login?error=google_session'):res.redirect('/'));});})(req,res,next);});
 app.get('/logout',(req,res)=>req.logout(()=>req.session.destroy(()=>res.redirect('/'))));
-app.get('/health',async(_req,res)=>{let database=true;try{await db.$queryRaw`SELECT 1`;}catch{database=false;}res.json({ok:true,provider:'gemini',gemini:!!process.env.GEMINI_API_KEY,database,google:!!(process.env.GOOGLE_CLIENT_ID&&process.env.GOOGLE_CLIENT_SECRET),base,googleCallback,model:process.env.GEMINI_MODEL||'gemini-2.5-flash'});});
+app.get('/health',async(_req,res)=>{let database=true;try{await db.$queryRaw`SELECT 1`;}catch{database=false;}res.json({ok:true,provider:'gemini',gemini:!!process.env.GEMINI_API_KEY,database,google:!!(process.env.GOOGLE_CLIENT_ID&&process.env.GOOGLE_CLIENT_SECRET),base,googleCallback,model:process.env.GEMINI_MODEL||'gemini-3.8-flash'});});
 app.get('/api/me',(req,res)=>res.json({user:req.user?{id:req.user.id,name:req.user.name,email:req.user.email,avatar:req.user.avatar,role:req.user.role}:null}));
 
 function textFileContent(file){if(!file)return'';const type=String(file.mimetype||''),ext=path.extname(file.originalname||'').toLowerCase();const allowed=new Set(['.txt','.md','.js','.ts','.jsx','.tsx','.json','.html','.css','.lua','.py','.sql','.xml','.yml','.yaml','.cfg','.ini','.log']);if(type.startsWith('text/')||type.includes('json')||allowed.has(ext))return file.buffer.toString('utf8').slice(0,120000);return'';}
@@ -49,7 +49,7 @@ function geminiParts(message,file){const parts=[];if(message)parts.push({text:me
 async function callGemini(parts){
  const key=String(process.env.GEMINI_API_KEY||'').trim();
  if(!key)throw Object.assign(new Error('GEMINI_API_KEY is missing in Railway.'),{status:503});
- const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
+ const model=process.env.GEMINI_MODEL||'gemini-3.8-flash';
  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),90000);
  try{
@@ -72,7 +72,7 @@ app.post('/api/chat',upload.single('file'),async(req,res)=>{try{
  const reply=await callGemini(parts);
  if(persistentUser)await db.message.create({data:{userId:req.user.id,role:'assistant',content:reply}}).catch(()=>{});
  return res.json({reply});
-}catch(e){console.error('GEMINI_CHAT_ERROR',{status:e?.status,code:e?.code,message:e?.message});const status=Number(e?.status)||500;if(status===400)return res.status(400).json({error:`Gemini rejected the request: ${e.message}`});if(status===401||status===403)return res.status(502).json({error:'Gemini API key is invalid or does not have permission.'});if(status===429)return res.status(429).json({error:'Gemini API quota/rate limit reached. Check the Gemini API project quota.'});if(status===503)return res.status(503).json({error:e.message});return res.status(500).json({error:'NEXUS AI could not reach Gemini. Check Railway Console for GEMINI_CHAT_ERROR.'});}});
+}catch(e){console.error('GEMINI_CHAT_ERROR',{status:e?.status,code:e?.code,message:e?.message});const status=Number(e?.status)||500;if(status===400)return res.status(400).json({error:`Gemini rejected the request: ${e.message}`});if(status===401||status===403)return res.status(502).json({error:'Gemini API key is invalid or does not have permission.'});if(status===404)return res.status(502).json({error:`Gemini model unavailable: ${e.message}`});if(status===429)return res.status(429).json({error:'Gemini API quota/rate limit reached. Check the Gemini API project quota.'});if(status===503)return res.status(503).json({error:e.message});return res.status(500).json({error:'NEXUS AI could not reach Gemini. Check Railway Console for GEMINI_CHAT_ERROR.'});}});
 
 function admin(req,res,next){if(!req.user||!['ADMIN','OWNER'].includes(req.user.role))return res.sendStatus(403);next();}
 app.get('/api/admin/users',admin,async(req,res)=>{const q=String(req.query.q||'');res.json(await db.user.findMany({where:q?{OR:[{name:{contains:q,mode:'insensitive'}},{email:{contains:q,mode:'insensitive'}}]}:{},orderBy:{createdAt:'desc'},take:100,select:{id:true,name:true,email:true,avatar:true,role:true,suspended:true,createdAt:true}}));});
