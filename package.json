@@ -1,13 +1,14 @@
 {
   "name": "nexus-ai",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "db:push": "prisma db push",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "railway:start": "prisma db push --skip-generate && node server.js"
   },
   "dependencies": {
     "@prisma/client": "6.18.0",
