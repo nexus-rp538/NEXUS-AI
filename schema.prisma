@@ -1,17 +1,38 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
-model User {
- id String @id @default(cuid())
- email String? @unique
- name String?
- avatar String?
- provider String
- providerId String
- role Role @default(USER)
- suspended Boolean @default(false)
- createdAt DateTime @default(now())
- messages Message[]
- @@unique([provider, providerId])
+generator client {
+  provider = "prisma-client-js"
 }
-model Message { id String @id @default(cuid()) userId String role String content String createdAt DateTime @default(now()) user User @relation(fields:[userId], references:[id], onDelete:Cascade) }
-enum Role { USER ADMIN OWNER }
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String    @id @default(cuid())
+  email      String?   @unique
+  name       String?
+  avatar     String?
+  provider   String
+  providerId String
+  role       Role      @default(USER)
+  suspended  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  messages   Message[]
+
+  @@unique([provider, providerId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ADMIN
+  OWNER
+}
