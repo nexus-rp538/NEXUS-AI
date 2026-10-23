@@ -1,1 +1,31 @@
-{"name":"nexus-ai","version":"1.0.0","private":true,"type":"module","scripts":{"start":"node server.js","dev":"node --watch server.js","db:push":"prisma db push","postinstall":"prisma generate"},"dependencies":{"@prisma/client":"latest","bcryptjs":"latest","cookie-parser":"latest","express":"latest","express-session":"latest","helmet":"latest","multer":"latest","openai":"latest","passport":"latest","passport-github2":"latest","passport-google-oauth20":"latest","pg":"latest","prisma":"latest"},"engines":{"node":">=20"}}
+{
+  "name": "nexus-ai",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:push": "prisma db push",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "6.18.0",
+    "bcryptjs": "3.0.2",
+    "cookie-parser": "1.4.7",
+    "express": "5.1.0",
+    "express-session": "1.18.2",
+    "helmet": "8.1.0",
+    "multer": "2.0.2",
+    "openai": "6.7.0",
+    "passport": "0.7.0",
+    "passport-github2": "0.1.12",
+    "passport-google-oauth20": "2.0.0",
+    "pg": "8.16.3",
+    "prisma": "6.18.0"
+  },
+  "engines": {
+    "node": "22.x",
+    "npm": ">=10"
+  }
+}
